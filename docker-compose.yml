@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Serviço Redis
+  redis:
+    image: redis:3.0.7-alpine
+    container_name: produtos-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - produtos-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Serviço da API Spring Boot
+  produtos-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: produtos-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - produtos-network
+    restart: unless-stopped
+
+networks:
+  produtos-network:
+    driver: bridge
