@@ -29,6 +29,19 @@
     <properties>
         <java.version>17</java.version>
     </properties>
+    <!--
+        VULNERABILIDADES CONHECIDAS (Dependências Transitivas):
+        - CVE-2026-1225: logback-core:1.5.22 (Severidade: 5.0 - Medium)
+          Descrição: Arquivo logback.xml malicioso pode permitir instanciação de classes arbitrárias
+          Status: Gerenciado pelo Spring Boot Parent, aguardando atualização upstream
+        
+        - CVE-2025-48924: commons-lang3:3.17.0 (Severidade: 5.3 - Medium)
+          Descrição: Informação insuficiente sobre a vulnerabilidade
+          Status: Gerenciado pelo Spring Boot Parent, aguardando atualização upstream
+        
+        Nota: Ambas são dependências transitivas de baixa/média severidade.
+        Recomenda-se monitorar atualizações do Spring Boot para correções.
+    -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -51,14 +64,14 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -82,26 +95,11 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>

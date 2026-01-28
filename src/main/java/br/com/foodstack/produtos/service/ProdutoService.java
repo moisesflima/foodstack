@@ -1,12 +1,12 @@
 package br.com.foodstack.produtos.service;
 
+import br.com.foodstack.produtos.dto.PageResponseDTO;
 import br.com.foodstack.produtos.dto.ProdutoRequestDTO;
 import br.com.foodstack.produtos.dto.ProdutoResponseDTO;
 import br.com.foodstack.produtos.entity.Produto;
 import br.com.foodstack.produtos.enums.Categoria;
 import br.com.foodstack.produtos.exception.ProdutoNotFoundException;
 import br.com.foodstack.produtos.repository.ProdutoRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,25 +16,36 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.stream.Collectors;
+
 /**
  * Serviço que contém a lógica de negócio para gerenciamento de produtos.
  */
 @Service
-@RequiredArgsConstructor
 public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
+
+    public ProdutoService(ProdutoRepository produtoRepository) {
+        this.produtoRepository = produtoRepository;
+    }
 
     /**
      * Lista todos os produtos com paginação.
      *
      * @param pageable Configurações de paginação.
-     * @return Página de DTOs de resposta de produtos.
+     * @return Página customizada de DTOs de resposta de produtos.
      */
     @Transactional(readOnly = true)
-    public Page<ProdutoResponseDTO> listarTodos(Pageable pageable) {
-        return produtoRepository.findAll(pageable)
-                .map(this::toResponseDTO);
+    public PageResponseDTO<ProdutoResponseDTO> listarTodos(Pageable pageable) {
+        Page<Produto> page = produtoRepository.findAll(pageable);
+        return new PageResponseDTO<>(
+                page.getContent().stream()
+                        .map(this::toResponseDTO)
+                        .collect(Collectors.toList()),
+                page.getTotalPages(),
+                page.getTotalElements()
+        );
     }
 
     /**
@@ -57,13 +68,19 @@ public class ProdutoService {
      *
      * @param categoria Categoria dos produtos.
      * @param pageable Configurações de paginação.
-     * @return Página de DTOs de resposta de produtos.
+     * @return Página customizada de DTOs de resposta de produtos.
      */
     @Transactional(readOnly = true)
     @Cacheable(value = "produtosPorCategoria", key = "#categoria")
-    public Page<ProdutoResponseDTO> buscarPorCategoria(Categoria categoria, Pageable pageable) {
-        return produtoRepository.findByCategoria(categoria, pageable)
-                .map(this::toResponseDTO);
+    public PageResponseDTO<ProdutoResponseDTO> buscarPorCategoria(Categoria categoria, Pageable pageable) {
+        Page<Produto> page = produtoRepository.findByCategoria(categoria, pageable);
+        return new PageResponseDTO<>(
+                page.getContent().stream()
+                        .map(this::toResponseDTO)
+                        .collect(Collectors.toList()),
+                page.getTotalPages(),
+                page.getTotalElements()
+        );
     }
 
     /**
@@ -71,13 +88,19 @@ public class ProdutoService {
      *
      * @param restauranteId ID do restaurante.
      * @param pageable Configurações de paginação.
-     * @return Página de DTOs de resposta de produtos.
+     * @return Página customizada de DTOs de resposta de produtos.
      */
     @Transactional(readOnly = true)
     @Cacheable(value = "produtosPorRestaurante", key = "#restauranteId")
-    public Page<ProdutoResponseDTO> buscarPorRestaurante(Long restauranteId, Pageable pageable) {
-        return produtoRepository.findByRestauranteId(restauranteId, pageable)
-                .map(this::toResponseDTO);
+    public PageResponseDTO<ProdutoResponseDTO> buscarPorRestaurante(Long restauranteId, Pageable pageable) {
+        Page<Produto> page = produtoRepository.findByRestauranteId(restauranteId, pageable);
+        return new PageResponseDTO<>(
+                page.getContent().stream()
+                        .map(this::toResponseDTO)
+                        .collect(Collectors.toList()),
+                page.getTotalPages(),
+                page.getTotalElements()
+        );
     }
 
     /**
@@ -93,14 +116,14 @@ public class ProdutoService {
     })
     public ProdutoResponseDTO criar(ProdutoRequestDTO requestDTO) {
         Produto produto = Produto.builder()
-                .nome(requestDTO.getNome())
-                .descricao(requestDTO.getDescricao())
-                .preco(requestDTO.getPreco())
-                .categoria(requestDTO.getCategoria())
-                .restauranteId(requestDTO.getRestauranteId())
-                .imagemUrl(requestDTO.getImagemUrl())
-                .disponivel(requestDTO.getDisponivel() != null ? requestDTO.getDisponivel() : true)
-                .tempoPreparoMinutos(requestDTO.getTempoPreparoMinutos())
+                .nome(requestDTO.nome())
+                .descricao(requestDTO.descricao())
+                .preco(requestDTO.preco())
+                .categoria(requestDTO.categoria())
+                .restauranteId(requestDTO.restauranteId())
+                .imagemUrl(requestDTO.imagemUrl())
+                .disponivel(requestDTO.disponivel() != null ? requestDTO.disponivel() : true)
+                .tempoPreparoMinutos(requestDTO.tempoPreparoMinutos())
                 .build();
 
         Produto salvo = produtoRepository.save(produto);
@@ -127,16 +150,16 @@ public class ProdutoService {
         Produto produto = produtoRepository.findById(id)
                 .orElseThrow(() -> new ProdutoNotFoundException(id));
 
-        produto.setNome(requestDTO.getNome());
-        produto.setDescricao(requestDTO.getDescricao());
-        produto.setPreco(requestDTO.getPreco());
-        produto.setCategoria(requestDTO.getCategoria());
-        produto.setRestauranteId(requestDTO.getRestauranteId());
-        produto.setImagemUrl(requestDTO.getImagemUrl());
-        if (requestDTO.getDisponivel() != null) {
-            produto.setDisponivel(requestDTO.getDisponivel());
+        produto.setNome(requestDTO.nome());
+        produto.setDescricao(requestDTO.descricao());
+        produto.setPreco(requestDTO.preco());
+        produto.setCategoria(requestDTO.categoria());
+        produto.setRestauranteId(requestDTO.restauranteId());
+        produto.setImagemUrl(requestDTO.imagemUrl());
+        if (requestDTO.disponivel() != null) {
+            produto.setDisponivel(requestDTO.disponivel());
         }
-        produto.setTempoPreparoMinutos(requestDTO.getTempoPreparoMinutos());
+        produto.setTempoPreparoMinutos(requestDTO.tempoPreparoMinutos());
 
         Produto atualizado = produtoRepository.save(produto);
         return toResponseDTO(atualizado);
@@ -168,18 +191,18 @@ public class ProdutoService {
      * @return DTO de resposta correspondente.
      */
     private ProdutoResponseDTO toResponseDTO(Produto produto) {
-        return ProdutoResponseDTO.builder()
-                .id(produto.getId())
-                .nome(produto.getNome())
-                .descricao(produto.getDescricao())
-                .preco(produto.getPreco())
-                .categoria(produto.getCategoria())
-                .restauranteId(produto.getRestauranteId())
-                .imagemUrl(produto.getImagemUrl())
-                .disponivel(produto.getDisponivel())
-                .tempoPreparoMinutos(produto.getTempoPreparoMinutos())
-                .dataCriacao(produto.getDataCriacao())
-                .dataAtualizacao(produto.getDataAtualizacao())
-                .build();
+        return new ProdutoResponseDTO(
+                produto.getId(),
+                produto.getNome(),
+                produto.getDescricao(),
+                produto.getPreco(),
+                produto.getCategoria(),
+                produto.getRestauranteId(),
+                produto.getImagemUrl(),
+                produto.getDisponivel(),
+                produto.getTempoPreparoMinutos(),
+                produto.getDataCriacao(),
+                produto.getDataAtualizacao()
+        );
     }
 }

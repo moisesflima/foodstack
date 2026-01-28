@@ -1,10 +1,7 @@
 package br.com.foodstack.produtos.dto;
 
 import br.com.foodstack.produtos.enums.Categoria;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -13,66 +10,39 @@ import java.time.LocalDateTime;
 /**
  * DTO para saída de dados de um Produto.
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ProdutoResponseDTO implements Serializable {
-    
-    private static final long serialVersionUID = 1L;
+@Schema(description = "Dados de resposta de um produto")
+public record ProdutoResponseDTO(
+        @Schema(description = "ID único do produto", example = "1")
+        Long id,
 
-    /**
-     * Identificador único do produto.
-     */
-    private Long id;
+        @Schema(description = "Nome do produto", example = "Hambúrguer Gourmet")
+        String nome,
 
-    /**
-     * Nome do produto.
-     */
-    private String nome;
+        @Schema(description = "Descrição detalhada do produto", example = "Pão brioche, carne 180g, queijo cheddar e bacon")
+        String descricao,
 
-    /**
-     * Descrição do produto.
-     */
-    private String descricao;
+        @Schema(description = "Preço do produto em reais", example = "35.00")
+        BigDecimal preco,
 
-    /**
-     * Preço do produto.
-     */
-    private BigDecimal preco;
+        @Schema(description = "Categoria do produto", example = "LANCHE")
+        Categoria categoria,
 
-    /**
-     * Categoria do produto.
-     */
-    private Categoria categoria;
+        @Schema(description = "ID do restaurante proprietário do produto", example = "1")
+        Long restauranteId,
 
-    /**
-     * ID do restaurante ao qual o produto pertence.
-     */
-    private Long restauranteId;
+        @Schema(description = "URL da imagem do produto", example = "https://exemplo.com/imagem.jpg")
+        String imagemUrl,
 
-    /**
-     * URL da imagem do produto.
-     */
-    private String imagemUrl;
+        @Schema(description = "Indica se o produto está disponível para venda", example = "true")
+        Boolean disponivel,
 
-    /**
-     * Indica se o produto está disponível.
-     */
-    private Boolean disponivel;
+        @Schema(description = "Tempo estimado de preparo em minutos", example = "20")
+        Integer tempoPreparoMinutos,
 
-    /**
-     * Tempo estimado de preparo em minutos.
-     */
-    private Integer tempoPreparoMinutos;
+        @Schema(description = "Data e hora de criação do produto", example = "2024-01-15T10:30:00")
+        LocalDateTime dataCriacao,
 
-    /**
-     * Data de criação do registro.
-     */
-    private LocalDateTime dataCriacao;
-
-    /**
-     * Data da última atualização do registro.
-     */
-    private LocalDateTime dataAtualizacao;
+        @Schema(description = "Data e hora da última atualização do produto", example = "2024-01-15T14:45:00")
+        LocalDateTime dataAtualizacao
+) implements Serializable {
 }

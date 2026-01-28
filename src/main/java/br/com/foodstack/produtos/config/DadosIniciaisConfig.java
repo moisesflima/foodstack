@@ -3,7 +3,6 @@ package br.com.foodstack.produtos.config;
 import br.com.foodstack.produtos.entity.Produto;
 import br.com.foodstack.produtos.enums.Categoria;
 import br.com.foodstack.produtos.repository.ProdutoRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,10 +13,13 @@ import java.util.List;
  * Classe responsável por popular o banco de dados com dados iniciais para teste.
  */
 @Configuration
-@RequiredArgsConstructor
 public class DadosIniciaisConfig implements CommandLineRunner {
 
     private final ProdutoRepository produtoRepository;
+
+    public DadosIniciaisConfig(ProdutoRepository produtoRepository) {
+        this.produtoRepository = produtoRepository;
+    }
 
     @Override
     public void run(String... args) {

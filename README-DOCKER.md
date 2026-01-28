@@ -58,6 +58,8 @@ docker-compose logs -f redis
 Após a inicialização completa, a API estará disponível em:
 
 - **API REST**: http://localhost:8080
+- **Documentação Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
 - **H2 Console**: http://localhost:8080/h2-console
   - JDBC URL: `jdbc:h2:mem:produtosdb`
   - Username: `sa`
@@ -81,7 +83,29 @@ curl http://localhost:8080/api/produtos/categoria/LANCHE
 curl http://localhost:8080/api/produtos/restaurante/1
 ```
 
-### 5. Verificar o cache no Redis
+### 5. Documentação da API (Swagger)
+
+A API está totalmente documentada com **SpringDoc OpenAPI 3.0**. Acesse a interface interativa do Swagger para:
+
+- Visualizar todos os endpoints disponíveis
+- Ver exemplos de requisições e respostas
+- Testar os endpoints diretamente pelo navegador
+- Consultar os modelos de dados (schemas)
+
+**Acesso:**
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI Spec (JSON)**: http://localhost:8080/v3/api-docs
+- **OpenAPI Spec (YAML)**: http://localhost:8080/v3/api-docs.yaml
+
+**Recursos documentados:**
+- ✅ Todos os 7 endpoints REST (GET, POST, PUT, DELETE)
+- ✅ Parâmetros de paginação (page, size)
+- ✅ Modelos de dados (DTOs) com exemplos
+- ✅ Códigos de resposta HTTP (200, 201, 204, 400, 404)
+- ✅ Enum de categorias com descrições
+- ✅ Informações sobre cache Redis
+
+### 6. Verificar o cache no Redis
 
 Para verificar as chaves armazenadas no Redis:
 
