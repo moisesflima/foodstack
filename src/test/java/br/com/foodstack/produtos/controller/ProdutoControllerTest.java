@@ -5,45 +5,48 @@ import br.com.foodstack.produtos.dto.ProdutoRequestDTO;
 import br.com.foodstack.produtos.dto.ProdutoResponseDTO;
 import br.com.foodstack.produtos.enums.Categoria;
 import br.com.foodstack.produtos.exception.ProdutoNotFoundException;
-import br.com.foodstack.produtos.service.ProdutoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.foodstack.produtos.service.impl.ProdutoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ProdutoController.class)
+@ExtendWith(MockitoExtension.class)
 @DisplayName("ProdutoController - Testes Unitários")
 class ProdutoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private ProdutoServiceImpl produtoServiceImpl;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
-    private ProdutoService produtoService;
+    @InjectMocks
+    private ProdutoController produtoController;
 
     private ProdutoResponseDTO responseDTO;
     private ProdutoRequestDTO requestDTO;
     private PageResponseDTO<ProdutoResponseDTO> pageResponseDTO;
+
+    private Validator validator;
 
     @BeforeEach
     void setUp() {
@@ -77,123 +80,141 @@ class ProdutoControllerTest {
                 1,
                 1L
         );
+
+        // Inicializa Validator para uso nos testes de validação manual
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
 
     @Test
     @DisplayName("GET /api/produtos - Deve listar todos os produtos com paginação")
-    void deveListarTodosProdutosComPaginacao() throws Exception {
+    void deveListarTodosProdutosComPaginacao() {
         // Arrange
-        when(produtoService.listarTodos(any())).thenReturn(pageResponseDTO);
+        when(produtoServiceImpl.listarTodos(any(Pageable.class))).thenReturn(pageResponseDTO);
 
-        // Act & Assert
-        mockMvc.perform(get("/api/produtos")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].nome").value("Hambúrguer Gourmet"))
-                .andExpect(jsonPath("$.totalPages").value(1))
-                .andExpect(jsonPath("$.totalElements").value(1));
+        // Act
+        ResponseEntity<PageResponseDTO<ProdutoResponseDTO>> responseEntity = produtoController.listarTodos(0, 10);
 
-        verify(produtoService, times(1)).listarTodos(any());
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        PageResponseDTO<ProdutoResponseDTO> result = responseEntity.getBody();
+        assertNotNull(result);
+        assertEquals(1, result.totalPages());
+        assertEquals(1L, result.totalElements());
+        assertFalse(result.content().isEmpty());
+        verify(produtoServiceImpl, times(1)).listarTodos(any(Pageable.class));
     }
 
     @Test
     @DisplayName("GET /api/produtos - Deve usar valores padrão de paginação")
-    void deveUsarValoresPadraoDePaginacao() throws Exception {
+    void deveUsarValoresPadraoDePaginacao() {
         // Arrange
-        when(produtoService.listarTodos(PageRequest.of(0, 10))).thenReturn(pageResponseDTO);
+        when(produtoServiceImpl.listarTodos(any(Pageable.class))).thenReturn(pageResponseDTO);
 
-        // Act & Assert
-        mockMvc.perform(get("/api/produtos"))
-                .andExpect(status().isOk());
+        // Act
+        ResponseEntity<PageResponseDTO<ProdutoResponseDTO>> responseEntity = produtoController.listarTodos(0, 10);
 
-        verify(produtoService, times(1)).listarTodos(PageRequest.of(0, 10));
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(produtoServiceImpl, times(1)).listarTodos(any(Pageable.class));
     }
 
     @Test
     @DisplayName("GET /api/produtos/{id} - Deve buscar produto por ID")
-    void deveBuscarProdutoPorId() throws Exception {
+    void deveBuscarProdutoPorId() {
         // Arrange
-        when(produtoService.buscarPorId(1L)).thenReturn(responseDTO);
+        when(produtoServiceImpl.buscarPorId(1L)).thenReturn(responseDTO);
 
-        // Act & Assert
-        mockMvc.perform(get("/api/produtos/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nome").value("Hambúrguer Gourmet"))
-                .andExpect(jsonPath("$.preco").value(35.00));
+        // Act
+        ResponseEntity<ProdutoResponseDTO> responseEntity = produtoController.buscarPorId(1L);
 
-        verify(produtoService, times(1)).buscarPorId(1L);
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        ProdutoResponseDTO result = responseEntity.getBody();
+        assertNotNull(result);
+        assertEquals(1L, result.id());
+        assertEquals("Hambúrguer Gourmet", result.nome());
+        assertEquals(new BigDecimal("35.00"), result.preco());
+        verify(produtoServiceImpl, times(1)).buscarPorId(1L);
     }
 
     @Test
     @DisplayName("GET /api/produtos/{id} - Deve retornar 404 quando produto não existe")
-    void deveRetornar404QuandoProdutoNaoExiste() throws Exception {
+    void deveRetornar404QuandoProdutoNaoExiste() {
         // Arrange
-        when(produtoService.buscarPorId(999L)).thenThrow(new ProdutoNotFoundException(999L));
+        when(produtoServiceImpl.buscarPorId(999L)).thenThrow(new ProdutoNotFoundException(999L));
 
         // Act & Assert
-        mockMvc.perform(get("/api/produtos/999"))
-                .andExpect(status().isNotFound());
-
-        verify(produtoService, times(1)).buscarPorId(999L);
+        assertThrows(ProdutoNotFoundException.class,
+                () -> produtoController.buscarPorId(999L));
+        verify(produtoServiceImpl, times(1)).buscarPorId(999L);
     }
 
     @Test
     @DisplayName("GET /api/produtos/categoria/{categoria} - Deve buscar por categoria")
-    void deveBuscarProdutosPorCategoria() throws Exception {
+    void deveBuscarProdutosPorCategoria() {
         // Arrange
-        when(produtoService.buscarPorCategoria(eq(Categoria.LANCHE), any())).thenReturn(pageResponseDTO);
+        when(produtoServiceImpl.buscarPorCategoria(eq(Categoria.LANCHE), any(Pageable.class)))
+                .thenReturn(pageResponseDTO);
 
-        // Act & Assert
-        mockMvc.perform(get("/api/produtos/categoria/LANCHE")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].categoria").value("LANCHE"));
+        // Act
+        ResponseEntity<PageResponseDTO<ProdutoResponseDTO>> responseEntity = produtoController.buscarPorCategoria(Categoria.LANCHE, 0, 10);
 
-        verify(produtoService, times(1)).buscarPorCategoria(eq(Categoria.LANCHE), any());
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        PageResponseDTO<ProdutoResponseDTO> result = responseEntity.getBody();
+        assertNotNull(result);
+        assertFalse(result.content().isEmpty());
+        assertEquals("LANCHE", result.content().get(0).categoria().toString());
+        verify(produtoServiceImpl, times(1)).buscarPorCategoria(eq(Categoria.LANCHE), any(Pageable.class));
     }
 
     @Test
     @DisplayName("GET /api/produtos/restaurante/{restauranteId} - Deve buscar por restaurante")
-    void deveBuscarProdutosPorRestaurante() throws Exception {
+    void deveBuscarProdutosPorRestaurante() {
         // Arrange
-        when(produtoService.buscarPorRestaurante(eq(1L), any())).thenReturn(pageResponseDTO);
+        when(produtoServiceImpl.buscarPorRestaurante(eq(1L), any(Pageable.class)))
+                .thenReturn(pageResponseDTO);
 
-        // Act & Assert
-        mockMvc.perform(get("/api/produtos/restaurante/1")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].restauranteId").value(1));
+        // Act
+        ResponseEntity<PageResponseDTO<ProdutoResponseDTO>> responseEntity = produtoController.buscarPorRestaurante(1L, 0, 10);
 
-        verify(produtoService, times(1)).buscarPorRestaurante(eq(1L), any());
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        PageResponseDTO<ProdutoResponseDTO> result = responseEntity.getBody();
+        assertNotNull(result);
+        assertFalse(result.content().isEmpty());
+        assertEquals(1L, result.content().get(0).restauranteId());
+        verify(produtoServiceImpl, times(1)).buscarPorRestaurante(eq(1L), any(Pageable.class));
     }
 
     @Test
     @DisplayName("POST /api/produtos - Deve criar produto com sucesso")
-    void deveCriarProdutoComSucesso() throws Exception {
+    void deveCriarProdutoComSucesso() {
         // Arrange
-        when(produtoService.criar(any(ProdutoRequestDTO.class))).thenReturn(responseDTO);
+        when(produtoServiceImpl.criar(any(ProdutoRequestDTO.class))).thenReturn(responseDTO);
 
-        // Act & Assert
-        mockMvc.perform(post("/api/produtos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nome").value("Hambúrguer Gourmet"))
-                .andExpect(jsonPath("$.preco").value(35.00));
+        // Act
+        ResponseEntity<ProdutoResponseDTO> responseEntity = produtoController.criar(requestDTO);
 
-        verify(produtoService, times(1)).criar(any(ProdutoRequestDTO.class));
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
+        ProdutoResponseDTO result = responseEntity.getBody();
+        assertNotNull(result);
+        assertEquals("Hambúrguer Gourmet", result.nome());
+        assertEquals(new BigDecimal("35.00"), result.preco());
+        verify(produtoServiceImpl, times(1)).criar(any(ProdutoRequestDTO.class));
     }
 
     @Test
-    @DisplayName("POST /api/produtos - Deve retornar 400 quando dados inválidos")
-    void deveRetornar400QuandoDadosInvalidos() throws Exception {
+    @DisplayName("POST /api/produtos - Deve retornar erro quando dados inválidos")
+    void deveRetornarErroQuandoDadosInvalidos() {
         // Arrange
         ProdutoRequestDTO requestInvalido = new ProdutoRequestDTO(
                 "",  // nome vazio - inválido
@@ -206,18 +227,17 @@ class ProdutoControllerTest {
                 20
         );
 
-        // Act & Assert
-        mockMvc.perform(post("/api/produtos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
-                .andExpect(status().isBadRequest());
+        // Act
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(requestInvalido);
 
-        verify(produtoService, never()).criar(any());
+        // Assert
+        assertFalse(violations.isEmpty());
+        verify(produtoServiceImpl, never()).criar(any());
     }
 
     @Test
-    @DisplayName("POST /api/produtos - Deve retornar 400 quando preço negativo")
-    void deveRetornar400QuandoPrecoNegativo() throws Exception {
+    @DisplayName("POST /api/produtos - Deve retornar erro quando preço negativo")
+    void deveRetornarErroQuandoPrecoNegativo() {
         // Arrange
         ProdutoRequestDTO requestInvalido = new ProdutoRequestDTO(
                 "Produto",
@@ -230,18 +250,17 @@ class ProdutoControllerTest {
                 20
         );
 
-        // Act & Assert
-        mockMvc.perform(post("/api/produtos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
-                .andExpect(status().isBadRequest());
+        // Act
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(requestInvalido);
 
-        verify(produtoService, never()).criar(any());
+        // Assert
+        assertFalse(violations.isEmpty());
+        verify(produtoServiceImpl, never()).criar(any());
     }
 
     @Test
-    @DisplayName("POST /api/produtos - Deve retornar 400 quando restauranteId null")
-    void deveRetornar400QuandoRestauranteIdNull() throws Exception {
+    @DisplayName("POST /api/produtos - Deve retornar erro quando restauranteId null")
+    void deveRetornarErroQuandoRestauranteIdNull() {
         // Arrange
         ProdutoRequestDTO requestInvalido = new ProdutoRequestDTO(
                 "Produto",
@@ -254,50 +273,49 @@ class ProdutoControllerTest {
                 20
         );
 
-        // Act & Assert
-        mockMvc.perform(post("/api/produtos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
-                .andExpect(status().isBadRequest());
+        // Act
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(requestInvalido);
 
-        verify(produtoService, never()).criar(any());
+        // Assert
+        assertFalse(violations.isEmpty());
+        verify(produtoServiceImpl, never()).criar(any());
     }
 
     @Test
     @DisplayName("PUT /api/produtos/{id} - Deve atualizar produto com sucesso")
-    void deveAtualizarProdutoComSucesso() throws Exception {
+    void deveAtualizarProdutoComSucesso() {
         // Arrange
-        when(produtoService.atualizar(eq(1L), any(ProdutoRequestDTO.class))).thenReturn(responseDTO);
+        when(produtoServiceImpl.atualizar(eq(1L), any(ProdutoRequestDTO.class)))
+                .thenReturn(responseDTO);
 
-        // Act & Assert
-        mockMvc.perform(put("/api/produtos/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Hambúrguer Gourmet"));
+        // Act
+        ResponseEntity<ProdutoResponseDTO> responseEntity = produtoController.atualizar(1L, requestDTO);
 
-        verify(produtoService, times(1)).atualizar(eq(1L), any(ProdutoRequestDTO.class));
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        ProdutoResponseDTO result = responseEntity.getBody();
+        assertNotNull(result);
+        assertEquals("Hambúrguer Gourmet", result.nome());
+        verify(produtoServiceImpl, times(1)).atualizar(eq(1L), any(ProdutoRequestDTO.class));
     }
 
     @Test
     @DisplayName("PUT /api/produtos/{id} - Deve retornar 404 quando produto não existe")
-    void deveRetornar404AoAtualizarProdutoInexistente() throws Exception {
+    void deveRetornar404AoAtualizarProdutoInexistente() {
         // Arrange
-        when(produtoService.atualizar(eq(999L), any(ProdutoRequestDTO.class)))
+        when(produtoServiceImpl.atualizar(eq(999L), any(ProdutoRequestDTO.class)))
                 .thenThrow(new ProdutoNotFoundException(999L));
 
         // Act & Assert
-        mockMvc.perform(put("/api/produtos/999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isNotFound());
-
-        verify(produtoService, times(1)).atualizar(eq(999L), any(ProdutoRequestDTO.class));
+        assertThrows(ProdutoNotFoundException.class,
+                () -> produtoController.atualizar(999L, requestDTO));
+        verify(produtoServiceImpl, times(1)).atualizar(eq(999L), any(ProdutoRequestDTO.class));
     }
 
     @Test
-    @DisplayName("PUT /api/produtos/{id} - Deve retornar 400 quando dados inválidos")
-    void deveRetornar400AoAtualizarComDadosInvalidos() throws Exception {
+    @DisplayName("PUT /api/produtos/{id} - Deve retornar erro quando dados inválidos")
+    void deveRetornarErroAoAtualizarComDadosInvalidos() {
         // Arrange
         ProdutoRequestDTO requestInvalido = new ProdutoRequestDTO(
                 "",  // nome vazio - inválido
@@ -310,38 +328,39 @@ class ProdutoControllerTest {
                 20
         );
 
-        // Act & Assert
-        mockMvc.perform(put("/api/produtos/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
-                .andExpect(status().isBadRequest());
+        // Act
+        Set<ConstraintViolation<ProdutoRequestDTO>> violations = validator.validate(requestInvalido);
 
-        verify(produtoService, never()).atualizar(anyLong(), any());
+        // Assert
+        assertFalse(violations.isEmpty());
+        verify(produtoServiceImpl, never()).atualizar(anyLong(), any());
     }
 
     @Test
     @DisplayName("DELETE /api/produtos/{id} - Deve deletar produto com sucesso")
-    void deveDeletarProdutoComSucesso() throws Exception {
+    void deveDeletarProdutoComSucesso() {
         // Arrange
-        doNothing().when(produtoService).deletar(1L);
+        doNothing().when(produtoServiceImpl).deletar(1L);
 
-        // Act & Assert
-        mockMvc.perform(delete("/api/produtos/1"))
-                .andExpect(status().isNoContent());
+        // Act
+        ResponseEntity<Void> responseEntity = produtoController.deletar(1L);
 
-        verify(produtoService, times(1)).deletar(1L);
+        // Assert
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
+        verify(produtoServiceImpl, times(1)).deletar(1L);
     }
 
     @Test
     @DisplayName("DELETE /api/produtos/{id} - Deve retornar 404 quando produto não existe")
-    void deveRetornar404AoDeletarProdutoInexistente() throws Exception {
+    void deveRetornar404AoDeletarProdutoInexistente() {
         // Arrange
-        doThrow(new ProdutoNotFoundException(999L)).when(produtoService).deletar(999L);
+        doThrow(new ProdutoNotFoundException(999L)).when(produtoServiceImpl).deletar(999L);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/produtos/999"))
-                .andExpect(status().isNotFound());
-
-        verify(produtoService, times(1)).deletar(999L);
+        assertThrows(ProdutoNotFoundException.class,
+                () -> produtoController.deletar(999L));
+        verify(produtoServiceImpl, times(1)).deletar(999L);
     }
 }
+

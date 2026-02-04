@@ -2,6 +2,11 @@
 server:
   port: 8080
 
+# Configurações da Aplicação
+app:
+  jwt:
+    secret: VGhpcyBpcyBhIDI1NiBiaXQgc2VjcmV0IGtleSBmb3IgSldUIEhNQUMtU0hBMjU2IHRoYXQgaXMgc2VjdXJlIGVub3VnaA==
+
 # Configurações do H2 Database
 spring:
   datasource:

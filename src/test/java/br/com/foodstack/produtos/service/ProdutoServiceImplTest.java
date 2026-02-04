@@ -7,6 +7,7 @@ import br.com.foodstack.produtos.entity.Produto;
 import br.com.foodstack.produtos.enums.Categoria;
 import br.com.foodstack.produtos.exception.ProdutoNotFoundException;
 import br.com.foodstack.produtos.repository.ProdutoRepository;
+import br.com.foodstack.produtos.service.impl.ProdutoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,13 +32,13 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProdutoService - Testes Unitários")
-class ProdutoServiceTest {
+class ProdutoServiceImplTest {
 
     @Mock
     private ProdutoRepository produtoRepository;
 
     @InjectMocks
-    private ProdutoService produtoService;
+    private ProdutoServiceImpl produtoServiceImpl;
 
     private Produto produto;
     private ProdutoRequestDTO requestDTO;
@@ -81,7 +82,7 @@ class ProdutoServiceTest {
         when(produtoRepository.findAll(pageable)).thenReturn(page);
 
         // Act
-        PageResponseDTO<ProdutoResponseDTO> resultado = produtoService.listarTodos(pageable);
+        PageResponseDTO<ProdutoResponseDTO> resultado = produtoServiceImpl.listarTodos(pageable);
 
         // Assert
         assertNotNull(resultado);
@@ -99,7 +100,7 @@ class ProdutoServiceTest {
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
 
         // Act
-        ProdutoResponseDTO resultado = produtoService.buscarPorId(1L);
+        ProdutoResponseDTO resultado = produtoServiceImpl.buscarPorId(1L);
 
         // Assert
         assertNotNull(resultado);
@@ -118,7 +119,7 @@ class ProdutoServiceTest {
         // Act & Assert
         ProdutoNotFoundException exception = assertThrows(
                 ProdutoNotFoundException.class,
-                () -> produtoService.buscarPorId(999L)
+                () -> produtoServiceImpl.buscarPorId(999L)
         );
 
         assertTrue(exception.getMessage().contains("999"));
@@ -134,7 +135,7 @@ class ProdutoServiceTest {
         when(produtoRepository.findByCategoria(Categoria.LANCHE, pageable)).thenReturn(page);
 
         // Act
-        PageResponseDTO<ProdutoResponseDTO> resultado = produtoService.buscarPorCategoria(Categoria.LANCHE, pageable);
+        PageResponseDTO<ProdutoResponseDTO> resultado = produtoServiceImpl.buscarPorCategoria(Categoria.LANCHE, pageable);
 
         // Assert
         assertNotNull(resultado);
@@ -152,7 +153,7 @@ class ProdutoServiceTest {
         when(produtoRepository.findByRestauranteId(1L, pageable)).thenReturn(page);
 
         // Act
-        PageResponseDTO<ProdutoResponseDTO> resultado = produtoService.buscarPorRestaurante(1L, pageable);
+        PageResponseDTO<ProdutoResponseDTO> resultado = produtoServiceImpl.buscarPorRestaurante(1L, pageable);
 
         // Assert
         assertNotNull(resultado);
@@ -168,7 +169,7 @@ class ProdutoServiceTest {
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
 
         // Act
-        ProdutoResponseDTO resultado = produtoService.criar(requestDTO);
+        ProdutoResponseDTO resultado = produtoServiceImpl.criar(requestDTO);
 
         // Assert
         assertNotNull(resultado);
@@ -194,7 +195,7 @@ class ProdutoServiceTest {
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
 
         // Act
-        ProdutoResponseDTO resultado = produtoService.criar(requestComDisponivelNull);
+        ProdutoResponseDTO resultado = produtoServiceImpl.criar(requestComDisponivelNull);
 
         // Assert
         assertNotNull(resultado);
@@ -209,7 +210,7 @@ class ProdutoServiceTest {
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
 
         // Act
-        ProdutoResponseDTO resultado = produtoService.atualizar(1L, requestDTO);
+        ProdutoResponseDTO resultado = produtoServiceImpl.atualizar(1L, requestDTO);
 
         // Assert
         assertNotNull(resultado);
@@ -236,7 +237,7 @@ class ProdutoServiceTest {
         when(produtoRepository.save(any(Produto.class))).thenReturn(produto);
 
         // Act
-        ProdutoResponseDTO resultado = produtoService.atualizar(1L, requestComDisponivelNull);
+        ProdutoResponseDTO resultado = produtoServiceImpl.atualizar(1L, requestComDisponivelNull);
 
         // Assert
         assertNotNull(resultado);
@@ -253,7 +254,7 @@ class ProdutoServiceTest {
         // Act & Assert
         ProdutoNotFoundException exception = assertThrows(
                 ProdutoNotFoundException.class,
-                () -> produtoService.atualizar(999L, requestDTO)
+                () -> produtoServiceImpl.atualizar(999L, requestDTO)
         );
 
         assertTrue(exception.getMessage().contains("999"));
@@ -269,7 +270,7 @@ class ProdutoServiceTest {
         doNothing().when(produtoRepository).deleteById(1L);
 
         // Act
-        produtoService.deletar(1L);
+        produtoServiceImpl.deletar(1L);
 
         // Assert
         verify(produtoRepository, times(1)).existsById(1L);
@@ -285,7 +286,7 @@ class ProdutoServiceTest {
         // Act & Assert
         ProdutoNotFoundException exception = assertThrows(
                 ProdutoNotFoundException.class,
-                () -> produtoService.deletar(999L)
+                () -> produtoServiceImpl.deletar(999L)
         );
 
         assertTrue(exception.getMessage().contains("999"));

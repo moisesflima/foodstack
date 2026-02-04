@@ -4,7 +4,7 @@ import br.com.foodstack.produtos.dto.PageResponseDTO;
 import br.com.foodstack.produtos.dto.ProdutoRequestDTO;
 import br.com.foodstack.produtos.dto.ProdutoResponseDTO;
 import br.com.foodstack.produtos.enums.Categoria;
-import br.com.foodstack.produtos.service.ProdutoService;
+import br.com.foodstack.produtos.service.impl.ProdutoServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Produtos", description = "Endpoints para gerenciamento de produtos")
 public class ProdutoController {
 
-    private final ProdutoService produtoService;
+    private final ProdutoServiceImpl produtoServiceImpl;
 
-    public ProdutoController(ProdutoService produtoService) {
-        this.produtoService = produtoService;
+    public ProdutoController(ProdutoServiceImpl produtoServiceImpl) {
+        this.produtoServiceImpl = produtoServiceImpl;
     }
 
     /**
@@ -57,7 +57,7 @@ public class ProdutoController {
             @Parameter(description = "Quantidade de itens por página", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(produtoService.listarTodos(pageable));
+        return ResponseEntity.ok(produtoServiceImpl.listarTodos(pageable));
     }
 
     /**
@@ -82,7 +82,7 @@ public class ProdutoController {
     public ResponseEntity<ProdutoResponseDTO> buscarPorId(
             @Parameter(description = "ID do produto", example = "1", required = true)
             @PathVariable Long id) {
-        return ResponseEntity.ok(produtoService.buscarPorId(id));
+        return ResponseEntity.ok(produtoServiceImpl.buscarPorId(id));
     }
 
     /**
@@ -115,7 +115,7 @@ public class ProdutoController {
             @Parameter(description = "Quantidade de itens por página", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(produtoService.buscarPorCategoria(categoria, pageable));
+        return ResponseEntity.ok(produtoServiceImpl.buscarPorCategoria(categoria, pageable));
     }
 
     /**
@@ -145,7 +145,7 @@ public class ProdutoController {
             @Parameter(description = "Quantidade de itens por página", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(produtoService.buscarPorRestaurante(restauranteId, pageable));
+        return ResponseEntity.ok(produtoServiceImpl.buscarPorRestaurante(restauranteId, pageable));
     }
 
     /**
@@ -173,7 +173,7 @@ public class ProdutoController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = ProdutoRequestDTO.class)))
             @RequestBody @Valid ProdutoRequestDTO requestDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(produtoService.criar(requestDTO));
+        return ResponseEntity.status(HttpStatus.CREATED).body(produtoServiceImpl.criar(requestDTO));
     }
 
     /**
@@ -206,7 +206,7 @@ public class ProdutoController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = ProdutoRequestDTO.class)))
             @RequestBody @Valid ProdutoRequestDTO requestDTO) {
-        return ResponseEntity.ok(produtoService.atualizar(id, requestDTO));
+        return ResponseEntity.ok(produtoServiceImpl.atualizar(id, requestDTO));
     }
 
     /**
@@ -229,7 +229,7 @@ public class ProdutoController {
     public ResponseEntity<Void> deletar(
             @Parameter(description = "ID do produto a ser removido", example = "1", required = true)
             @PathVariable Long id) {
-        produtoService.deletar(id);
+        produtoServiceImpl.deletar(id);
         return ResponseEntity.noContent().build();
     }
 }
